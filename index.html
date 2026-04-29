@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>For My Dearest</title>
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600&family=Quicksand:wght@400;600&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-pink: #ffafbd;
+            --dark-pink: #ff8e91;
+            --accent-red: #ff4b2b;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: linear-gradient(135deg, #ffafbd 0%, #ffc3a0 100%);
+            font-family: 'Quicksand', sans-serif;
+            margin: 0;
+            height: 100vh;
+            height: -webkit-fill-available;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            /* Heart Cursor */
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="%23ff4b2b"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>'), auto;
+        }
+
+        #heartCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            z-index: 0; /* Background layer */
+        }
+
+        .container {
+            width: 90%;
+            max-width: 450px;
+            max-height: 85vh;
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 30px;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            position: relative;
+            z-index: 1; /* Page content layer */
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+
+        .page {
+            width: 100%;
+            padding: 25px;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .page.active {
+            display: flex;
+            animation: fadeIn 0.5s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h1, h2 { font-family: 'Dancing Script', cursive; color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.1); text-align: center; margin-top: 10px; }
+        
+        .pin-input {
+            padding: 12px;
+            border-radius: 15px;
+            border: 2px solid white;
+            background: rgba(255, 255, 255, 0.5);
+            text-align: center;
+            font-size: 24px;
+            width: 140px;
+            letter-spacing: 4px;
+            outline: none;
+            color: #ff4b2b;
+            margin: 15px 0;
+        }
+
+        .photo-frame {
+            background: white;
+            padding: 10px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 320px;
+        }
+
+        .photo-frame img { width: 100%; height: auto; display: block; border-radius: 2px; }
+
+        .letter-paper {
+            background: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 5px 5px 0px var(--dark-pink);
+            font-style: italic;
+            text-align: left;
+            line-height: 1.5;
+            width: 100%;
+        }
+
+        .navbar {
+            position: fixed;
+            bottom: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px 25px;
+            border-radius: 50px;
+            display: flex;
+            gap: 30px;
+            z-index: 10;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            display: none;
+        }
+
+        .nav-item { font-size: 22px; cursor: pointer; transition: 0.3s; }
+
+        .btn {
+            background: var(--accent-red);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            font-weight: bold;
+            margin-top: 15px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        /* ---------------------------------- */
+        /* IMPORTANT Z-INDEX CHANGES BELOW    */
+        /* ---------------------------------- */
+
+        /* Explosion Particle Styling: Highest Layer */
+        .heart-particle {
+            position: fixed;
+            pointer-events: none;
+            z-index: 3000; /* Must be higher than #surpriseOverlay */
+            font-size: 20px;
+            user-select: none;
+            text-shadow: 0 0 10px rgba(255,255,255,0.5);
+        }
+
+        /* Surprise Message Overlay: In front of content, behind particles */
+        #surpriseOverlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 2000; /* Layer below particles */
+            display: none;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+        }
+
+        .surprise-card {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            width: 80%;
+            max-width: 300px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes popIn {
+            from { transform: scale(0.5); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .music-controls {
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            z-index: 100;
+            display: none;
+        }
+
+        .music-btn {
+            background: white;
+            border: 2px solid var(--primary-pink);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="heartCanvas"></canvas>
+
+    <div id="surpriseOverlay" onclick="closeSurprise()">
+        <div class="surprise-card">
+            <div style="font-size: 50px;">🫂❤️</div>
+            <h2 style="color: #ff4b2b; font-family: 'Quicksand'; margin-bottom: 10px;">Virtual Hug Sent!</h2>
+            <p style="color: #666;">I wish I could hold you tight right now. You mean the world to me! I love you kaayu!</p>
+            <p style="font-size: 12px; color: #999;">(Click anywhere to close)</p>
+        </div>
+    </div>
+
+    <div class="music-controls" id="mControls">
+        <div class="music-btn" id="playBtn" onclick="toggleMusic()">🎵</div>
+    </div>
+    <audio id="bgMusic" loop></audio>
+
+    <div class="container" id="mainContainer">
+        <div id="lock" class="page active">
+            <h1>Locked with Love 🧸</h1>
+            <p style="color: white; text-align: center;">Enter the PIN(Clue: Your Birthday):</p>
+            <input type="tel" id="pinField" class="pin-input" maxlength="4" placeholder="••••">
+            <button class="btn" onclick="checkPin()">Unlock</button>
+        </div>
+
+        <div id="home" class="page">
+            <h1 style="font-size: 3em;">Hi Beautiful 🧸</h1>
+            <p style="color: white; text-align: center;">I made this special place for us.</p>
+            <div style="font-size: 60px; margin: 10px 0;">🌸</div>
+            <button class="btn" onclick="showPage('photos')">See Our Photos</button>
+        </div>
+
+        <div id="photos" class="page">
+            <h2>Our Moments I Cherish The Most 📸</h2>
+            <div class="photo-frame" style="transform: rotate(-2deg);"><img src="1.jpg" alt="1"></div>
+            <div class="photo-frame" style="transform: rotate(2deg);"><img src="2.jpg" alt="2"></div>
+            <div class="photo-frame" style="transform: rotate(-1deg);"><img src="3.jpg" alt="3"></div>
+        </div>
+
+        <div id="letter" class="page">
+            <h2>From My Heart ✉️</h2>
+            <div class="letter-paper">
+                <p>To my favorite person,</p>
+                <p>Hey love, I’ve been thinking about you a lot, and I just wanted to remind you how important you are to me. No matter how far away you are, you still mean the world to me. Distance may keep us from seeing each other every day, but it could never make me care about you any less. If anything, it makes me realize even more how special you are to me because despite all the miles between us, my heart still chooses you every single day.
+
+You’re honestly one of the most precious people in my life. Out of everyone in this world, you’re still the person I think about the most, the person I want to talk to first, and the person who makes me happiest. It’s crazy how someone so far away can hold such a huge place in my heart, but you do. No distance could ever replace what I feel for you.
+
+Even on busy days, you’re still on my mind. I wonder how your day is going, if you’ve eaten already, if you’re smiling, or if something is bothering you. I care about you so deeply, and I hope you always remember that you are never alone because you’ll always have me loving you from wherever I am. You matter to me more than words could ever fully explain.
+
+Sometimes I wish I could be there beside you for the little moments — walking with you, holding your hand, making you laugh in person, or simply being close to you without needing a phone screen between us. But until that day comes, I hope my words can remind you just how loved you truly are. No matter how many miles separate us, my feelings for you stay the same, strong and real.
+
+Thank you for being part of my life and for giving me someone so beautiful to love. You make my days brighter just by existing, and honestly, I wouldn’t trade what we have for anything. You’re worth every second of waiting, every late-night conversation, and every mile between us.
+
+No matter how far you are, you will always matter the most to me. Always. ❤️
+.</p>
+                <p>Always yours,<br><strong>-QTpie</strong></p>
+            </div>
+            <button class="btn" id="hugBtn" style="background: #333;" onclick="giveVirtualHug(event)">Click for a Teddy Hug</button>
+        </div>
+    </div>
+
+    <nav class="navbar" id="bottomNav">
+        <div class="nav-item" onclick="showPage('home')">🏠</div>
+        <div class="nav-item" onclick="showPage('photos')">🖼️</div>
+        <div class="nav-item" onclick="showPage('letter')">✍️</div>
+    </nav>
+
+    <script>
+        const music = document.getElementById('bgMusic');
+        const playBtn = document.getElementById('playBtn');
+        const correctPin = "0311"; 
+
+        music.src = "Crazier (Taylor Swift) cover by Arthur Miguel.mp3"; 
+
+        function checkPin() {
+            if (document.getElementById('pinField').value === correctPin) {
+                document.getElementById('bottomNav').style.display = 'flex';
+                document.getElementById('mControls').style.display = 'block';
+                showPage('home');
+                music.play();
+                playBtn.innerText = '⏸️';
+            } else {
+                alert("Wrong PIN, try again love! ❤️");
+                document.getElementById('pinField').value = "";
+            }
+        }
+
+        function toggleMusic() {
+            music.paused ? (music.play(), playBtn.innerText = '⏸️') : (music.pause(), playBtn.innerText = '▶️');
+        }
+
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(p => {
+                p.classList.remove('active');
+                if(p.id === pageId) p.classList.add('active');
+            });
+        }
+
+        // VIRTUAL HUG SURPRISE LOGIC
+        function giveVirtualHug(event) {
+            // 1. Calculate Button Center for Explosion Point
+            const btn = event.target;
+            const rect = btn.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+
+            // 2. Explode Hearts (Appear *over* the upcoming overlay)
+            // Increased particle count for better 'explosion' feel
+            for (let i = 0; i < 50; i++) {
+                createHeartParticle(centerX, centerY);
+            }
+
+            // 3. Delay the Message Overlay so it seems triggered *by* the explosion
+            setTimeout(() => {
+                document.getElementById('surpriseOverlay').style.display = 'flex';
+            }, 300); // Shorter delay for smoother feel
+        }
+
+        function createHeartParticle(x, y) {
+            const el = document.createElement('div');
+            // Random mixed particles
+            el.innerHTML = ['❤️', '💖', '🧸', '✨', '🌸', '💝'][Math.floor(Math.random() * 6)];
+            el.className = 'heart-particle';
+            document.body.appendChild(el);
+
+            // Spread out wider and more randomly
+            const destX = x + (Math.random() - 0.5) * 500;
+            const destY = y + (Math.random() - 0.5) * 600;
+            const duration = 1200 + Math.random() * 1000; // Varying durations
+
+            const animation = el.animate([
+                { transform: `translate(${x}px, ${y}px) scale(0)`, opacity: 1 },
+                { transform: `translate(${destX}px, ${destY}px) scale(2.0)`, opacity: 0 } // Larger expansion
+            ], {
+                duration: duration,
+                easing: 'cubic-bezier(0, .9, .57, 1)' // Fast launch, gentle fade
+            });
+
+            animation.onfinish = () => el.remove();
+        }
+
+        function closeSurprise() {
+            document.getElementById('surpriseOverlay').style.display = 'none';
+        }
+
+        // Falling Hearts Background Animation
+        const canvas = document.getElementById('heartCanvas');
+        const ctx = canvas.getContext('2d');
+        let hearts = [];
+        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+        window.addEventListener('resize', resize); resize();
+
+        class BackgroundHeart {
+            constructor() { this.reset(); }
+            reset() {
+                this.x = Math.random() * canvas.width;
+                this.y = -20;
+                this.size = Math.random() * 12 + 8;
+                this.speed = Math.random() * 1.5 + 0.5;
+                this.opacity = Math.random() * 0.2 + 0.1; // Kept gentle
+            }
+            update() { this.y += this.speed; if (this.y > canvas.height) this.reset(); }
+            draw() {
+                ctx.fillStyle = `rgba(255, 75, 43, ${this.opacity})`;
+                ctx.font = `${this.size}px serif`;
+                ctx.fillText('❤️', this.x, this.y);
+            }
+        }
+        for (let i = 0; i < 25; i++) hearts.push(new BackgroundHeart());
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            hearts.forEach(h => { h.update(); h.draw(); });
+            requestAnimationFrame(animate);
+        }
+        animate();
+    </script>
+</body>
+</html>
